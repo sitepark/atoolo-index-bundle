@@ -122,6 +122,6 @@ class IndexerStatusStore
         $sanitizedKey = str_replace('\\', '', $key);
         $sanitizedKey = basename($sanitizedKey);
         return $this->basedir
-            . '/atoolo.search.index.' . $sanitizedKey . ".status.json";
+            . '/atoolo.index.' . $sanitizedKey . ".status.json";
     }
 }

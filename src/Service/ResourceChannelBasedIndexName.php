@@ -8,6 +8,15 @@ use Atoolo\Resource\ResourceChannel;
 use Atoolo\Resource\ResourceLanguage;
 use Atoolo\Index\Exception\UnsupportedIndexLanguageException;
 
+/**
+ * Derives the index name from the resource channel and appends the locale of
+ * a translated language: `<index>`, `<index>-<locale>`.
+ *
+ * That is the convention of a target that keeps one index per language, so
+ * that language specific handling - stop words, stemming - can be configured
+ * per index. A target with a single multilingual index implements
+ * {@see IndexName} itself.
+ */
 class ResourceChannelBasedIndexName implements IndexName
 {
     public function __construct(

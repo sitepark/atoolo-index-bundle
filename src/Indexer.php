@@ -8,13 +8,13 @@ use Atoolo\Index\Dto\Indexer\IndexerStatus;
 use Atoolo\Index\Service\Indexer\IndexerProgressHandler;
 
 /**
- * The service interface for indexing a search index.
+ * The service interface for filling an index.
  *
  * The main task of an indexer is to systematically analyze documents or
- * content in order to extract relevant information from them. This information
- * is structured and stored in a search index to enable efficient search
- * queries. The indexer organizes the data and extracts hierarchical structures
- * that search engines use to deliver fast and accurate search results.
+ * content in order to extract relevant information from them. That
+ * information is structured and handed to an index target, which stores it in
+ * whatever form it needs to answer requests quickly. Where the content comes
+ * from is the indexer's business, what happens to it afterwards the target's.
  */
 interface Indexer
 {

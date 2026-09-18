@@ -8,8 +8,11 @@ use Atoolo\Resource\Resource;
 use Atoolo\Index\Exception\DocumentEnrichingException;
 
 /**
- * This interface can be used to implement enricher with the help of which a
- * Solr document can be enriched on the basis of a resource.
+ * Implemented to fill an index document from a resource.
+ *
+ * An enricher is always written for one index target, because it sets the
+ * fields or the structure that this target expects. Each target bundle
+ * therefore collects its enricher under a tag of its own.
  *
  * @template T of IndexDocument
  */

@@ -38,7 +38,7 @@ class IndexerStatusStoreTest extends TestCase
         $store->store('test', $status);
 
         $json = file_get_contents(
-            self::TEST_DIR . '/atoolo.search.index.test.status.json',
+            self::TEST_DIR . '/atoolo.index.test.status.json',
         );
 
         $expected
@@ -95,7 +95,7 @@ class IndexerStatusStoreTest extends TestCase
         $filesystem = new Filesystem();
         $filesystem->mkdir($baseDir);
 
-        $file = $baseDir . '/atoolo.search.index.test-not-writable.status.json';
+        $file = $baseDir . '/atoolo.index.test-not-writable.status.json';
         touch($file);
         $filesystem->chmod($file, 0000);
 
@@ -171,7 +171,7 @@ class IndexerStatusStoreTest extends TestCase
     public function testLoadFileNotReadable(): void
     {
         $file = self::TEST_DIR . '/'
-            . 'atoolo.search.index.test-not-readable.status.json';
+            . 'atoolo.index.test-not-readable.status.json';
 
         $filesystem = new Filesystem();
         $filesystem->touch($file);

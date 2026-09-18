@@ -26,10 +26,11 @@ class IndexDocumentDumperTest extends TestCase
 
         $dump = $dumper->dump(['/test.php']);
 
+        $this->assertCount(1, $dump, 'one document expected');
         $this->assertEquals(
-            [['sp_id' => '123']],
-            $dump,
-            'unexpected dump',
+            ['id' => '123'],
+            $dump[0]->jsonSerialize(),
+            'the enriched document should be returned',
         );
     }
 
@@ -52,7 +53,7 @@ class IndexDocumentDumperTest extends TestCase
     private function createFactory(): IndexDocumentFactory
     {
         $document = $this->createStub(IndexDocument::class);
-        $document->method('getFields')->willReturn([]);
+        $document->method('jsonSerialize')->willReturn([]);
 
         $factory = $this->createStub(IndexDocumentFactory::class);
         $factory->method('create')->willReturn($document);
@@ -66,7 +67,7 @@ class IndexDocumentDumperTest extends TestCase
     private function createEnricher(): DocumentEnricher
     {
         $enriched = $this->createStub(IndexDocument::class);
-        $enriched->method('getFields')->willReturn(['sp_id' => '123']);
+        $enriched->method('jsonSerialize')->willReturn(['id' => '123']);
 
         $enricher = $this->createStub(DocumentEnricher::class);
         $enricher->method('enrichDocument')->willReturn($enriched);

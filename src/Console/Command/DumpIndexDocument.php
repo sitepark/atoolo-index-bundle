@@ -90,9 +90,9 @@ class DumpIndexDocument extends Command
 
         $dump = $dumper->dump($paths);
 
-        foreach ($dump as $fields) {
+        foreach ($dump as $document) {
             $output->writeln(json_encode(
-                $fields,
+                $document,
                 JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT,
             ));
         }

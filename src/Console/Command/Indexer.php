@@ -90,8 +90,6 @@ class Indexer extends Command
         $selectableIndexer = [];
 
         foreach ($this->indexers->getIndexers() as $indexer) {
-            $s = $indexer->getSource();
-            $n = $indexer->getName();
             if (!empty($source) && $indexer->getSource() !== $source) {
                 continue;
             }

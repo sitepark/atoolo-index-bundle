@@ -9,6 +9,7 @@ use Atoolo\Resource\ResourceChannel;
 use Atoolo\Resource\ResourceTenant;
 use Atoolo\Index\Console\Application;
 use Atoolo\Index\Console\Command\DumpIndexDocument;
+use Atoolo\Index\Service\Indexer\IndexDocument;
 use Atoolo\Index\Service\Indexer\IndexDocumentDumper;
 use Atoolo\Index\Service\Indexer\IndexDocumentDumperCollection;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -47,10 +48,10 @@ class DumpIndexDocumentTest extends TestCase
         $dumper = $this->createStub(IndexDocumentDumper::class);
         $dumper->method('getSource')
             ->willReturn('internal');
+        $document = $this->createStub(IndexDocument::class);
+        $document->method('jsonSerialize')->willReturn(['id' => '123']);
         $dumper->method('dump')
-            ->willReturn([
-                ['sp_id' => '123'],
-            ]);
+            ->willReturn([$document]);
 
         $dumperCommand = new DumpIndexDocument(
             $resourceChannel,
@@ -81,7 +82,7 @@ Channel: WWW (source: internal)
 ===============================
 
 {
-    "sp_id": "123"
+    "id": "123"
 }
 
 EOF,

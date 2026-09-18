@@ -38,8 +38,18 @@ written against them:
 - `IndexUpdateResult` — `isSuccess()` / `getErrorMessage()`
 - `IndexDocumentFactory` — creates the target's `IndexDocument`
 
-Solr specific calls such as delete-by-query are deliberately **not** part of
-`IndexService`.
+`IndexService` carries only what a run of the indexer needs. Free-form target
+queries — Solr's delete-by-query for instance — stay with the target; the two
+deletions in the port are the ones the lifecycle itself requires. The only
+thing the port expects of a document is that it keeps the process id of the
+run that wrote it, otherwise `deleteExcludingProcessId()` cannot tell stale
+documents from current ones.
+
+`IndexDocument` prescribes **no structure**. It extends `\JsonSerializable`
+and nothing else: a document only has to represent itself as data, so that
+`index:dump-document` can show what a run would write. Whether that is a flat
+map of fields, a nested tree or a list of sections is the target's decision —
+the indexer never looks inside.
 
 ### Indexing pipeline
 

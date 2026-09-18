@@ -8,8 +8,8 @@ use Atoolo\Resource\Resource;
 
 /**
  * The `ContentMatcher` interface is implemented in order to extract from the
- * content structure of resources the content that is relevant for the `content`
- * field of the search index.
+ * content structure of resources the text that is relevant for the full text
+ * content of the index document.
  */
 interface ContentMatcher
 {
@@ -31,7 +31,7 @@ interface ContentMatcher
      * @param array<mixed, mixed> $value Value within a data structure
      *        that is to be checked.
      * @return string|false The extracted content or `false` if the
-     *         content is not relevant for the search index.
+     *         content is not relevant for the index.
      */
     public function match(array $path, array $value, Resource $resource): string|false;
 }

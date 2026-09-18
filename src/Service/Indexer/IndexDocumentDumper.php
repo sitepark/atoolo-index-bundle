@@ -34,9 +34,9 @@ class IndexDocumentDumper
 
     /**
      * @param string[] $paths
-     * @return array<int,array<string,mixed>>
-     *    Returns the raw array data of the documents to be able to
-     *    output them as JSON, for example.
+     * @return array<int,IndexDocument>
+     *    The documents themselves; each one knows how to represent itself
+     *    as data.
      */
     public function dump(array $paths): array
     {
@@ -55,7 +55,7 @@ class IndexDocumentDumper
                 );
             }
 
-            $documents[] = $doc->getFields();
+            $documents[] = $doc;
         }
 
         return $documents;

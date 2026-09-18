@@ -76,6 +76,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
         IndexerConfigurationLoader $configLoader,
         string $source,
         IndexName $indexName,
+        private readonly bool $enabledWithoutConfig = false,
         private readonly ?PhpLimitIncreaser $limitIncreaser = null,
         private readonly LoggerInterface $logger = new NullLogger(),
         private readonly LockFactory $lockFactory = new LockFactory(
@@ -92,13 +93,16 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
     }
 
     /**
-     * The internal resource indexer is always available. Its configuration
-     * is optional, {@see IndexerConfigurationLoader::load()} falls back to
-     * defaults if the CMS provides no configuration file.
+     * A target whose indexer should run even without a CMS side
+     * configuration file passes `$enabledWithoutConfig`;
+     * {@see IndexerConfigurationLoader::load()} falls back to defaults then.
+     * Every other target is only offered once the CMS has a
+     * `configs/indexer/<source>.php`, so that the targets of a project can
+     * be switched on separately.
      */
     public function enabled(): bool
     {
-        return true;
+        return $this->enabledWithoutConfig || parent::enabled();
     }
 
     /**

@@ -20,7 +20,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 #[AsCommand(
     name: 'index:indexer',
-    description: 'Fill a search index',
+    description: 'Fill an index',
 )]
 class Indexer extends Command
 {
@@ -39,7 +39,7 @@ class Indexer extends Command
     protected function configure(): void
     {
         $this
-            ->setHelp('Command to fill a search index')
+            ->setHelp('Command to fill an index')
             ->addArgument(
                 'paths',
                 InputArgument::OPTIONAL | InputArgument::IS_ARRAY,

@@ -162,6 +162,7 @@ class InternalResourceIndexerTest extends TestCase
             $this->indexerConfigurationLoader,
             'test-source',
             $indexName,
+            true,
             null,
             $this->logger,
             $this->lockFactory,
@@ -480,11 +481,39 @@ class InternalResourceIndexerTest extends TestCase
         $this->indexer->index();
     }
 
-    public function testEnabled(): void
+    public function testEnabledWithoutConfig(): void
     {
         $this->assertTrue(
             $this->indexer->enabled(),
-            'indexer should be always enabled',
+            'an indexer that opted out of the config file should be enabled',
+        );
+    }
+
+    public function testEnabledFollowsTheConfigFile(): void
+    {
+        $indexName = $this->createStub(IndexName::class);
+        $indexName->method('name')->willReturn('test');
+
+        $indexer = new InternalResourceIndexer(
+            [ $this->documentEnricher ],
+            $this->indexerFilter,
+            $this->indexerProgressHandler,
+            $this->finder,
+            $this->resourceLoader,
+            $this->indexService,
+            $this->aborter,
+            $this->indexerConfigurationLoader,
+            'test-source',
+            $indexName,
+        );
+
+        $this->indexerConfigurationLoader->method('exists')
+            ->willReturn(false);
+
+        $this->assertFalse(
+            $indexer->enabled(),
+            'without a CMS configuration file the indexer should not be '
+            . 'offered',
         );
     }
 

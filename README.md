@@ -11,4 +11,4 @@ It defines the indexer interface, the CMS side indexer configuration, the docume
 enricher mechanics, status handling, abortion, the console commands and the scheduler.
 The index target itself (Solr, a GenAI application, …) is implemented by other bundles.
 
-[Documentation](https://sitepark.github.io/atoolo-docs/develop/bundles/index/)
+[Documentation](https://sitepark.github.io/atoolo-docs/develop/bundles/index-bundle/)

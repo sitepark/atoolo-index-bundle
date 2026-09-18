@@ -1,0 +1,90 @@
+parameters:
+  atoolo_index.indexer.time_limit: 7200
+  atoolo_index.indexer.memory_limit: '512M'
+  # cron expression per indexer source, e.g. { internal: '0 2 * * *' }
+  atoolo_index.indexer.schedules: {}
+
+services:
+
+  _defaults:
+    autowire: true      # Automatically injects dependencies in your services.
+    autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+
+  atoolo_index.index_name:
+    class: Atoolo\Index\Service\ResourceChannelBasedIndexName
+    arguments:
+      - '@atoolo_resource.resource_channel'
+
+  atoolo_index.indexer.php_limit_increaser:
+    class: Atoolo\Index\Service\Indexer\PhpLimitIncreaser
+    arguments:
+      - '%atoolo_index.indexer.time_limit%'
+      - '%atoolo_index.indexer.memory_limit%'
+
+  atoolo_index.indexer.content_collector.sitekit:
+    class: Atoolo\Index\Service\Indexer\ContentCollector
+    arguments:
+      - !tagged_iterator atoolo_index.indexer.sitekit.content_matcher
+
+  atoolo_index.indexer.resource_filter:
+    class: Atoolo\Index\Service\Indexer\SiteKit\NoIndexFilter
+
+  Atoolo\Index\Service\Indexer\SiteKit\HeadlineMatcher:
+    tags:
+      - { name: 'atoolo_index.indexer.sitekit.content_matcher', priority: 10 }
+
+  Atoolo\Index\Service\Indexer\SiteKit\RichtTextMatcher:
+    tags:
+      - { name: 'atoolo_index.indexer.sitekit.content_matcher', priority: 20 }
+
+  Atoolo\Index\Service\Indexer\SiteKit\QuoteSectionMatcher:
+    tags:
+      - { name: 'atoolo_index.indexer.sitekit.content_matcher', priority: 20 }
+
+  Atoolo\Index\Service\Indexer\SiteKit\LinkTextMatcher:
+    tags:
+      - { name: 'atoolo_index.indexer.sitekit.content_matcher', priority: 20 }
+
+  atoolo_index.indexer.aborter:
+    class: Atoolo\Index\Service\Indexer\IndexingAborter
+    arguments:
+      - '%kernel.cache_dir%'
+      - 'indexing'
+
+  atoolo_index.indexer.location_finder:
+    class: Atoolo\Index\Service\Indexer\LocationFinder
+    arguments:
+      - '@atoolo_resource.resource_channel'
+
+  atoolo_index.indexer.status_store:
+    class: Atoolo\Index\Service\Indexer\IndexerStatusStore
+    arguments:
+      - '%kernel.cache_dir%'
+
+  atoolo_index.indexer.configuration_loader:
+    class: Atoolo\Index\Service\Indexer\IndexerConfigurationLoader
+    arguments:
+      - '@atoolo_resource.resource_channel'
+
+  atoolo_index.indexer.indexer_collection:
+    class: Atoolo\Index\Service\Indexer\IndexerCollection
+    arguments:
+      - !tagged_iterator { tag: 'atoolo_index.indexer' }
+
+  atoolo_index.indexer.index_document_dumper_collection:
+    class: Atoolo\Index\Service\Indexer\IndexDocumentDumperCollection
+    arguments:
+      - !tagged_iterator { tag: 'atoolo_index.indexer.document_dumper' }
+
+  atoolo_index.indexer.schedule_provider:
+    class: Atoolo\Index\Service\Indexer\IndexerScheduleProvider
+    arguments:
+      - '@atoolo_index.indexer.indexer_collection'
+      - '%atoolo_index.indexer.schedules%'
+      - '@atoolo_index.index_name'
+
+  atoolo_index.indexer.message_handler:
+    class: Atoolo\Index\Service\Indexer\IndexerMessageHandler
+    arguments:
+      - '@atoolo_index.indexer.indexer_collection'
+      - '@logger'

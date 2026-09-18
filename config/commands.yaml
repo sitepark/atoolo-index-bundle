@@ -1,0 +1,35 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+    _instanceof:
+        Symfony\Component\Console\Command\Command:
+            tags: ['command']
+
+    atoolo_index.indexer.console.progress_bar:
+      class: 'Atoolo\Index\Console\Command\Io\IndexerProgressBar'
+
+    Atoolo\Index\Console\Command\Indexer:
+      arguments:
+        - '@atoolo_resource.resource_channel'
+        - '@atoolo_index.indexer.console.progress_bar'
+        - '@atoolo_index.indexer.indexer_collection'
+      tags: ['command']
+
+    Atoolo\Index\Console\Command\IndexerInternalResourceUpdate:
+      arguments:
+        - '@atoolo_resource.resource_channel'
+        - '@atoolo_index.indexer.console.progress_bar'
+        - '@atoolo_index.indexer.indexer_collection'
+      tags: ['command']
+
+    Atoolo\Index\Console\Command\DumpIndexDocument:
+      arguments:
+        - '@atoolo_resource.resource_channel'
+        - '@atoolo_index.indexer.index_document_dumper_collection'
+      tags: ['command']
+
+    Atoolo\Index\Console\Application:
+        public: true
+        arguments:
+            - !tagged_iterator command

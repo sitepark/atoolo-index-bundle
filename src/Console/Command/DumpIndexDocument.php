@@ -144,6 +144,7 @@ class DumpIndexDocument extends Command
         );
         $question->setErrorMessage('Source %s is invalid.');
 
+        /** @var string $selectedSource */
         $selectedSource = $helper->ask($input, $output, $question);
         $io->text('You have just selected: ' . $selectedSource);
 

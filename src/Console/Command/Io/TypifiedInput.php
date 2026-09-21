@@ -20,7 +20,7 @@ class TypifiedInput
         $value = $this->input->getOption($name);
         if (!is_string($value)) {
             throw new InvalidArgumentException(
-                'option ' . $name . ' must be a string: ' . $value,
+                'option ' . $name . ' must be a string',
             );
         }
         return $value;
@@ -31,7 +31,7 @@ class TypifiedInput
         $value = $this->input->getOption($name);
         if (!is_numeric($value)) {
             throw new InvalidArgumentException(
-                'option ' . $name . ' must be a integer: ' . $value,
+                'option ' . $name . ' must be a integer',
             );
         }
         return (int) $value;
@@ -59,6 +59,7 @@ class TypifiedInput
                 'argument ' . $name . ' must be a array',
             );
         }
+        /** @var string[] $value */
         return $value;
     }
 }

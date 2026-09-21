@@ -72,10 +72,14 @@ class IndexerConfigurationLoader
                 );
             }
 
+            $name = $data['name'] ?? $source;
+            /** @var array<string,mixed> $configData */
+            $configData = is_array($data['data'] ?? null) ? $data['data'] : [];
+
             return new IndexerConfiguration(
                 $source,
-                $data['name'] ?? $source,
-                new DataBag($data['data'] ?? []),
+                is_string($name) ? $name : $source,
+                new DataBag($configData),
             );
         } finally {
             ob_end_clean();

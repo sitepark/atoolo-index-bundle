@@ -127,6 +127,7 @@ class Indexer extends Command
         );
         $question->setErrorMessage('Indexer %s is invalid.');
 
+        /** @var string $selectedName */
         $selectedName = $helper->ask($this->input, $this->output, $question);
         $this->io->text('You have just selected: ' . $selectedName);
 

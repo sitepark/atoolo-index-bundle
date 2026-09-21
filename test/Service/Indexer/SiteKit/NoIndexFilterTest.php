@@ -18,10 +18,10 @@ class NoIndexFilterTest extends TestCase
     {
         $resource = new Resource(
             'test',
-            'test',
-            'test',
-            'test',
             '',
+            'test',
+            'test',
+            'test',
             ResourceLanguage::default(),
             new DataBag([]),
         );
@@ -36,10 +36,10 @@ class NoIndexFilterTest extends TestCase
     {
         $resource = new Resource(
             'test',
-            'test',
-            'test',
-            'test',
             '',
+            'test',
+            'test',
+            'test',
             ResourceLanguage::default(),
             new DataBag(['noIndex' => true]),
         );

@@ -11,10 +11,12 @@ use Atoolo\Index\Console\Application;
 use Atoolo\Index\Console\Command\IndexerInternalResourceUpdate;
 use Atoolo\Index\Console\Command\Io\IndexerProgressBar;
 use Atoolo\Index\Service\Indexer\IndexerCollection;
+use Atoolo\Index\Indexer;
 use Atoolo\Index\Service\Indexer\UpdatableIndexer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\Exception;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Tester\CommandTester;
 
@@ -62,13 +64,65 @@ class IndexerInternalResourceUpdateTest extends TestCase
         $this->commandTester = new CommandTester($command);
     }
 
-    private function createIndexer(): UpdatableIndexer
+    private function createIndexer(string $source = 'indexer_a'): UpdatableIndexer
     {
         $indexer = $this->createStub(UpdatableIndexer::class);
         $indexer->method('enabled')->willReturn(true);
-        $indexer->method('getSource')->willReturn('indexer_a');
-        $indexer->method('getName')->willReturn('Indexer A');
+        $indexer->method('getSource')->willReturn($source);
+        $indexer->method('getName')->willReturn(
+            ['indexer_a' => 'Indexer A', 'indexer_b' => 'Indexer B'][$source],
+        );
         return $indexer;
+    }
+
+    private function createTester(IndexerCollection $indexers): CommandTester
+    {
+        $command = new IndexerInternalResourceUpdate(
+            $this->resourceChannel,
+            $this->createStub(IndexerProgressBar::class),
+            $indexers,
+        );
+        $application = new Application([$command]);
+        return new CommandTester($application->find('index:update'));
+    }
+
+    public function testExecuteWithoutUpdatableIndexer(): void
+    {
+        // an indexer that cannot update single paths is skipped
+        $plain = $this->createStub(Indexer::class);
+        $plain->method('enabled')->willReturn(true);
+        $tester = $this->createTester(new IndexerCollection([$plain]));
+
+        $tester->execute(['paths' => ['a.php']]);
+
+        $this->assertEquals(
+            Command::FAILURE,
+            $tester->getStatusCode(),
+            'without an updatable indexer the command should fail',
+        );
+        $this->assertStringContainsString(
+            'No updatable indexer available',
+            $tester->getDisplay(),
+        );
+    }
+
+    public function testExecuteFiltersBySource(): void
+    {
+        $tester = $this->createTester(new IndexerCollection([
+            $this->createIndexer('indexer_a'),
+            $this->createIndexer('indexer_b'),
+        ]));
+
+        $tester->execute(['paths' => ['a.php'], '--source' => 'indexer_b']);
+        $tester->assertCommandIsSuccessful();
+
+        $output = $tester->getDisplay();
+        $this->assertStringContainsString('(source: indexer_b)', $output);
+        $this->assertStringNotContainsString(
+            'indexer_a',
+            $output,
+            'the other source should be left out',
+        );
     }
 
     public function testExecuteIndexPath(): void

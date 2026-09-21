@@ -449,11 +449,11 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
         $updater = $this->indexService->updater($lang);
 
         foreach ($resources as $resource) {
-            if ($this->resourceFilter->accept($resource) === false) {
-                $this->progressHandler->skip(1);
-                continue;
-            }
             try {
+                if ($this->resourceFilter->accept($resource) === false) {
+                    $this->progressHandler->skip(1);
+                    continue;
+                }
                 $doc = $updater->createDocument();
                 foreach ($this->documentEnricherList as $enricher) {
                     $doc = $enricher->enrichDocument(

@@ -21,6 +21,7 @@ class NoIndexFilterTest extends TestCase
             'test',
             'test',
             'test',
+            '',
             ResourceLanguage::default(),
             new DataBag([]),
         );
@@ -38,6 +39,7 @@ class NoIndexFilterTest extends TestCase
             'test',
             'test',
             'test',
+            '',
             ResourceLanguage::default(),
             new DataBag(['noIndex' => true]),
         );

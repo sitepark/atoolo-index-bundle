@@ -106,6 +106,18 @@ class IndexerProgressBarTest extends TestCase
         $this->progressBar->skip(10);
     }
 
+    public function testUnchanged(): void
+    {
+        $this->progressBar->start(10);
+
+        $this->progressHandler
+            ->expects($this->once())
+            ->method('unchanged')
+            ->with(3);
+
+        $this->progressBar->unchanged(3);
+    }
+
     public function testError(): void
     {
 

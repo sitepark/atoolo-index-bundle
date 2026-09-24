@@ -17,6 +17,7 @@ use Atoolo\Index\Service\Indexer\IndexingAborter;
 use Atoolo\Index\Service\Indexer\IndexDocument;
 use Atoolo\Index\Service\Indexer\IndexService;
 use Atoolo\Index\Service\Indexer\IndexUpdateResult;
+use Atoolo\Index\Service\Indexer\IndexUpdateResultWithUnchanged;
 use Atoolo\Index\Service\Indexer\IndexUpdater;
 use Atoolo\Index\Service\Indexer\InternalResourceIndexer;
 use Atoolo\Index\Service\Indexer\LocationFinder;
@@ -106,7 +107,9 @@ class InternalResourceIndexerTest extends TestCase
         $this->indexService = $this->createMock(IndexService::class);
         $this->updateResult = $this->createStub(IndexUpdateResult::class);
         $this->updater = $this->createMock(IndexUpdater::class);
-        $this->updater->method('update')->willReturn($this->updateResult);
+        $this->updater->method('update')->willReturnCallback(
+            fn() => $this->updateResult,
+        );
         $this->updater->method('createDocument')->willReturnCallback(
             fn() => $this->createStub(IndexDocument::class),
         );
@@ -385,6 +388,33 @@ class InternalResourceIndexerTest extends TestCase
 
         $this->updater->expects($this->exactly(1))
             ->method('update');
+
+        $this->indexer->update([
+            '/a/b.php',
+            '/a/c.php',
+        ]);
+    }
+
+    public function testUnchangedDocumentsAreReported(): void
+    {
+        $this->finder->method('findPaths')
+            ->willReturn([
+                '/a/b.php',
+                '/a/c.php',
+            ]);
+        $this->updateResult = $this->createStub(
+            IndexUpdateResultWithUnchanged::class,
+        );
+        $this->updateResult->method('isSuccess')
+            ->willReturn(true);
+        $this->updateResult->method('getUnchanged')
+            ->willReturn(2);
+        $this->indexerFilter->method('accept')
+            ->willReturn(true);
+
+        $this->indexerProgressHandler->expects($this->once())
+            ->method('unchanged')
+            ->with(2);
 
         $this->indexer->update([
             '/a/b.php',

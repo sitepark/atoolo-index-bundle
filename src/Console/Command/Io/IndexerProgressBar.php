@@ -79,6 +79,11 @@ class IndexerProgressBar implements IndexerProgressHandler
         $this->currentProgressHandler->skip($step);
     }
 
+    public function unchanged(int $step): void
+    {
+        $this->currentProgressHandler->unchanged($step);
+    }
+
     private function formatProgressBar(string $color): void
     {
         $this->progressBar?->setBarCharacter('<fg=' . $color . '>•</>');

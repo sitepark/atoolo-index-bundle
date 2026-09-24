@@ -384,6 +384,10 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
         $this->progressHandler->advance(count($resourceList));
         $result = $this->add($lang, $processId, $resourceList);
 
+        if ($result instanceof IndexUpdateResultWithUnchanged) {
+            $this->progressHandler->unchanged($result->getUnchanged());
+        }
+
         if (!$result->isSuccess()) {
             $this->handleError(
                 $result->getErrorMessage() ?? 'Unknown index error',

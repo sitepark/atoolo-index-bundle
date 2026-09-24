@@ -91,6 +91,7 @@ class IndexerProgressState implements IndexerProgressHandler
             lastUpdate: new DateTime(),
             updated: $storedStatus->updated,
             errors: $storedStatus->errors,
+            unchanged: $storedStatus->unchanged,
         );
         $this->statusStore->store(
             $this->getStatusStoreKey(),
@@ -124,6 +125,16 @@ class IndexerProgressState implements IndexerProgressHandler
             );
         }
         $this->status->skipped += $step;
+    }
+
+    public function unchanged(int $step): void
+    {
+        if ($this->status === null) {
+            throw new LogicException(
+                'Cannot advance without starting the progress',
+            );
+        }
+        $this->status->unchanged += $step;
     }
 
     public function error(Throwable $throwable): void

@@ -35,7 +35,9 @@ written against them:
   delete, and a `prepareIndexing()` hook for whatever a target needs before a
   full run
 - `IndexUpdater` — collects the documents of one chunk and transfers them
-- `IndexUpdateResult` — `isSuccess()` / `getErrorMessage()`
+- `IndexUpdateResult` — `isSuccess()` / `getErrorMessage()`; a target that
+  recognises unchanged documents implements `IndexUpdateResultWithUnchanged`
+  instead, and the indexer shows their number as `unchanged` in the status
 - `IndexDocumentFactory` — creates the target's `IndexDocument`
 
 `IndexService` carries only what a run of the indexer needs. Free-form target

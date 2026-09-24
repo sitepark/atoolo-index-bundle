@@ -17,7 +17,8 @@ use DateTime;
  *  skipped: ?int,
  *  lastUpdate: ?int,
  *  updated: ?int,
- *  errors: ?int
+ *  errors: ?int,
+ *  unchanged: ?int
  * }
  */
 class IndexerStatus
@@ -33,6 +34,7 @@ class IndexerStatus
         public int $updated,
         public int $errors,
         public string $prepareMessage = '',
+        public int $unchanged = 0,
     ) {}
 
     public static function empty(): IndexerStatus
@@ -81,6 +83,7 @@ class IndexerStatus
             . 'skipped: ' . $this->skipped . ', '
             . 'lastUpdate: ' . $lastUpdate->format('d.m.Y H:i') . ', '
             . 'updated: ' . $this->updated . ', '
+            . 'unchanged: ' . $this->unchanged . ', '
             . 'errors: ' . $this->errors;
     }
 }

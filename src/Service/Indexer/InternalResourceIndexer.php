@@ -106,6 +106,27 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
     }
 
     /**
+     * Whether a full run of this indexer is in progress, in this or any
+     * other process of the host.
+     *
+     * An update during a full run is lost: it writes its documents with a
+     * process id of its own, and the purge at the end of the full run
+     * removes every document without the process id of the run - also the
+     * updated ones whose path the run had already passed.
+     */
+    public function isIndexing(): bool
+    {
+        $lock = $this->lockFactory->createLock(
+            'indexer.' . $this->getKey(),
+        );
+        if (!$lock->acquire()) {
+            return true;
+        }
+        $lock->release();
+        return false;
+    }
+
+    /**
      * @throws ExceptionInterface
      */
     public function getStatus(): IndexerStatus

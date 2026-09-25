@@ -88,3 +88,10 @@ services:
     arguments:
       - '@atoolo_index.indexer.indexer_collection'
       - '@logger'
+
+  # tagged as atoolo_resource.resource_change_handler through autoconfigure
+  atoolo_index.indexer.resource_change_handler:
+    class: Atoolo\Index\Service\Indexer\IndexerResourceChangeHandler
+    arguments:
+      - '@atoolo_index.indexer.indexer_collection'
+      - '@logger'

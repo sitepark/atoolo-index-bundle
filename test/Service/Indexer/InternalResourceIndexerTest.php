@@ -601,6 +601,19 @@ class InternalResourceIndexerTest extends TestCase
         }
     }
 
+    public function testIsIndexing(): void
+    {
+        $this->assertFalse($this->indexer->isIndexing());
+        $lock = $this->lockFactory->createLock('indexer.test-test-source');
+        try {
+            $lock->acquire();
+            $this->assertTrue($this->indexer->isIndexing());
+        } finally {
+            $lock->release();
+        }
+        $this->assertFalse($this->indexer->isIndexing());
+    }
+
     public function testWithDifferentLocaleInResource(): void
     {
         $this->finder->method('findAll')

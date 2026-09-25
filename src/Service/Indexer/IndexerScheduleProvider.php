@@ -21,8 +21,8 @@ use Symfony\Component\Scheduler\ScheduleProviderInterface;
  *
  * `AddScheduleMessengerPass` creates one transport per schedule name, so one
  * provider per indexer would require one `messenger:consume` worker per
- * indexer. Therefore all sources share a single schedule and are told apart
- * by the source carried in the {@see IndexerMessage}.
+ * indexer. Therefore all indexers share a single schedule and are told apart
+ * by the indexer id carried in the {@see IndexerMessage}.
  *
  * The lock guards the schedule itself. Concurrent runs of a single indexer
  * are already prevented by the indexer implementation.
@@ -33,7 +33,7 @@ class IndexerScheduleProvider implements ScheduleProviderInterface
     private ?Schedule $schedule = null;
 
     /**
-     * @param array<string,string> $schedules cron expression per source
+     * @param array<string,string> $schedules cron expression per indexer id
      */
     public function __construct(
         private readonly IndexerCollection $indexers,
@@ -52,21 +52,21 @@ class IndexerScheduleProvider implements ScheduleProviderInterface
         }
 
         $schedule = new Schedule();
-        $knownSources = [];
+        $knownIds = [];
         foreach ($this->indexers->getIndexers() as $indexer) {
-            $knownSources[] = $indexer->getSource();
+            $knownIds[] = IndexerId::of($indexer);
         }
 
-        foreach ($this->schedules as $source => $cron) {
-            if (!in_array($source, $knownSources, true)) {
+        foreach ($this->schedules as $id => $cron) {
+            if (!in_array($id, $knownIds, true)) {
                 $this->logger->warning(
-                    'No indexer registered for scheduled source',
-                    ['source' => $source],
+                    'No indexer registered for scheduled id',
+                    ['id' => $id],
                 );
                 continue;
             }
             $schedule->add(
-                RecurringMessage::cron($cron, new IndexerMessage($source)),
+                RecurringMessage::cron($cron, new IndexerMessage($id)),
             );
         }
 

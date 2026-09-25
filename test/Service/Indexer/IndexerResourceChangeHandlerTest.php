@@ -83,7 +83,8 @@ class IndexerResourceChangeHandlerTest extends TestCase
         $running = $this->createMock(InternalResourceIndexer::class);
         $running->method('enabled')->willReturn(true);
         $running->method('isIndexing')->willReturn(true);
-        $running->method('getSource')->willReturn('genai');
+        $running->method('getId')->willReturn('genai');
+        $running->method('getSource')->willReturn('internal');
         $running->expects($this->never())->method('update');
 
         $this->expectException(ResourceChangeDeferredException::class);

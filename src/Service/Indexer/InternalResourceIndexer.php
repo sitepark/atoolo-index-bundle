@@ -82,6 +82,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
         private readonly LockFactory $lockFactory = new LockFactory(
             new SemaphoreStore(),
         ),
+        ?string $id = null,
     ) {
         parent::__construct(
             $indexName,
@@ -89,6 +90,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
             $aborter,
             $configLoader,
             $source,
+            $id,
         );
     }
 
@@ -97,7 +99,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
      * configuration file passes `$enabledWithoutConfig`;
      * {@see IndexerConfigurationLoader::load()} falls back to defaults then.
      * Every other target is only offered once the CMS has a
-     * `configs/indexer/<source>.php`, so that the targets of a project can
+     * `configs/indexer/<id>.php`, so that the targets of a project can
      * be switched on separately.
      */
     public function enabled(): bool
@@ -255,7 +257,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
 
     private function loadIndexerParameter(): IndexerParameter
     {
-        $config = $this->configLoader->load($this->source);
+        $config = $this->configLoader->load($this->id);
         /** @var string[] $excludes */
         $excludes = $config->data->getArray(
             'excludes',

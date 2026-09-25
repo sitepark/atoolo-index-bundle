@@ -14,9 +14,14 @@ use Atoolo\Resource\ResourceLocation;
  * itself is created by the same {@see IndexDocumentFactory} the target's
  * {@see IndexUpdater} uses, so a dump always shows what an index run would
  * write.
+ *
+ * It carries the id and the source of the indexer it belongs to, see
+ * {@see \Atoolo\Index\Service\AbstractIndexer}.
  */
 class IndexDocumentDumper
 {
+    private readonly string $id;
+
     /**
      * @param iterable<DocumentEnricher<IndexDocument>> $documentEnricherList
      */
@@ -25,7 +30,15 @@ class IndexDocumentDumper
         private readonly iterable $documentEnricherList,
         private readonly IndexDocumentFactory $documentFactory,
         private readonly string $source,
-    ) {}
+        ?string $id = null,
+    ) {
+        $this->id = $id ?? $source;
+    }
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
 
     public function getSource(): string
     {

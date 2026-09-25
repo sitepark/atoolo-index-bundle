@@ -40,7 +40,7 @@ class IndexerResourceChangeHandler implements ResourceChangeHandler
                 && $indexer->isIndexing()
             ) {
                 throw new ResourceChangeDeferredException(
-                    'indexer ' . $indexer->getSource() . ' is running',
+                    'indexer ' . IndexerId::of($indexer) . ' is running',
                 );
             }
         }
@@ -50,7 +50,7 @@ class IndexerResourceChangeHandler implements ResourceChangeHandler
             if (!empty($paths) && $indexer instanceof UpdatableIndexer) {
                 $status = $indexer->update($paths);
                 $this->logger->info('Resources updated', [
-                    'source' => $indexer->getSource(),
+                    'id' => IndexerId::of($indexer),
                     'paths' => count($paths),
                     'status' => $status->getStatusLine(),
                 ]);
@@ -58,7 +58,7 @@ class IndexerResourceChangeHandler implements ResourceChangeHandler
             if (!empty($changes->removedIds)) {
                 $indexer->remove($changes->removedIds);
                 $this->logger->info('Resources removed', [
-                    'source' => $indexer->getSource(),
+                    'id' => IndexerId::of($indexer),
                     'ids' => count($changes->removedIds),
                 ]);
             }

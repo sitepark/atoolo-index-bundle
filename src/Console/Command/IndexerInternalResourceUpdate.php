@@ -7,6 +7,7 @@ namespace Atoolo\Index\Console\Command;
 use Atoolo\Index\Console\Command\Io\IndexerProgressBar;
 use Atoolo\Index\Console\Command\Io\TypifiedInput;
 use Atoolo\Index\Service\Indexer\IndexerCollection;
+use Atoolo\Index\Service\Indexer\IndexerId;
 use Atoolo\Index\Service\Indexer\UpdatableIndexer;
 use Atoolo\Resource\ResourceChannel;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -46,7 +47,14 @@ class IndexerInternalResourceUpdate extends Command
                 'source',
                 null,
                 InputArgument::OPTIONAL,
-                'Uses only the indexer of a specific source',
+                'Uses only the indexers of a specific source',
+                '',
+            )
+            ->addOption(
+                'indexer',
+                null,
+                InputArgument::OPTIONAL,
+                'Uses only the indexer with this id',
                 '',
             )
         ;
@@ -62,11 +70,12 @@ class IndexerInternalResourceUpdate extends Command
         $this->io = new SymfonyStyle($input, $output);
 
         $source = $typedInput->getStringOption('source');
+        $id = $typedInput->getStringOption('indexer');
         $paths = $typedInput->getArrayArgument('paths');
 
         $this->io->title('Channel: ' . $this->channel->name);
 
-        $selectable = $this->getSelectableIndexer($source);
+        $selectable = $this->getSelectableIndexer($source, $id);
         if (empty($selectable)) {
             $this->io->error('No updatable indexer available');
             return Command::FAILURE;
@@ -82,7 +91,7 @@ class IndexerInternalResourceUpdate extends Command
     /**
      * @return UpdatableIndexer[]
      */
-    private function getSelectableIndexer(string $source): array
+    private function getSelectableIndexer(string $source, string $id): array
     {
         $selectable = [];
         foreach ($this->indexers->getIndexers() as $indexer) {
@@ -90,6 +99,9 @@ class IndexerInternalResourceUpdate extends Command
                 continue;
             }
             if (!empty($source) && $indexer->getSource() !== $source) {
+                continue;
+            }
+            if (!empty($id) && IndexerId::of($indexer) !== $id) {
                 continue;
             }
             if ($indexer->enabled()) {
@@ -108,7 +120,10 @@ class IndexerInternalResourceUpdate extends Command
         $this->io->section(
             'Index resource paths with Indexer "'
             . $indexer->getName() . '" '
-            . '(source: ' . $indexer->getSource() . ')',
+            . IndexerId::label(
+                IndexerId::of($indexer),
+                $indexer->getSource(),
+            ),
         );
         $this->io->listing($paths);
         $progressHandler = $indexer->getProgressHandler();

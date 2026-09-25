@@ -16,15 +16,15 @@ class IndexerCollection
         private readonly iterable $indexers,
     ) {}
 
-    public function getIndexer(string $source): Indexer
+    public function getIndexer(string $id): Indexer
     {
         foreach ($this->indexers as $indexer) {
-            if ($indexer->getSource() === $source) {
+            if (IndexerId::of($indexer) === $id) {
                 return $indexer;
             }
         }
         throw new InvalidArgumentException(
-            'Indexer not found for source: ' . $source,
+            'Indexer not found for id: ' . $id,
         );
     }
 

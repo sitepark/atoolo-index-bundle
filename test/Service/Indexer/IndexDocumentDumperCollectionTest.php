@@ -16,7 +16,7 @@ class IndexDocumentDumperCollectionTest extends TestCase
     public function testGetDumper(): void
     {
         $dumper = $this->createStub(IndexDocumentDumper::class);
-        $dumper->method('getSource')->willReturn('test');
+        $dumper->method('getId')->willReturn('test');
 
         $collection = new IndexDocumentDumperCollection([$dumper]);
 

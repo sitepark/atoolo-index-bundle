@@ -11,6 +11,11 @@ use Atoolo\Resource\DataBag;
  */
 class IndexerConfiguration
 {
+    /**
+     * @param string $source the id of the indexer, which names the file
+     *    `configs/indexer/<id>.php`; see
+     *    {@see \Atoolo\Index\Service\AbstractIndexer}
+     */
     public function __construct(
         public readonly string $source,
         public readonly string $name,

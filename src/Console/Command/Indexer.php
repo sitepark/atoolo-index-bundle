@@ -8,6 +8,7 @@ use Atoolo\Resource\ResourceChannel;
 use Atoolo\Index\Console\Command\Io\IndexerProgressBar;
 use Atoolo\Index\Console\Command\Io\TypifiedInput;
 use Atoolo\Index\Service\Indexer\IndexerCollection;
+use Atoolo\Index\Service\Indexer\IndexerId;
 use Atoolo\Index\Service\Indexer\UpdatableIndexer;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -49,7 +50,14 @@ class Indexer extends Command
                 'source',
                 null,
                 InputArgument::OPTIONAL,
-                'Uses only the indexer of a specific source',
+                'Uses only the indexers of a specific source',
+                '',
+            )
+            ->addOption(
+                'indexer',
+                null,
+                InputArgument::OPTIONAL,
+                'Uses only the indexer with this id',
                 '',
             )
         ;
@@ -66,11 +74,12 @@ class Indexer extends Command
         $this->io = new SymfonyStyle($input, $output);
 
         $source = $typedInput->getStringOption('source');
+        $id = $typedInput->getStringOption('indexer');
         $paths = $typedInput->getArrayArgument('paths');
 
         $this->io->title('Channel: ' . $this->channel->name);
 
-        $selectableIndexer = $this->getSelectableIndexer($source);
+        $selectableIndexer = $this->getSelectableIndexer($source, $id);
 
         if (empty($selectableIndexer)) {
             $this->io->error('No indexer available');
@@ -85,12 +94,15 @@ class Indexer extends Command
     /**
      * @return \Atoolo\Index\Indexer[]
      */
-    private function getSelectableIndexer(?string $source): array
+    private function getSelectableIndexer(string $source, string $id): array
     {
         $selectableIndexer = [];
 
         foreach ($this->indexers->getIndexers() as $indexer) {
             if (!empty($source) && $indexer->getSource() !== $source) {
+                continue;
+            }
+            if (!empty($id) && IndexerId::of($indexer) !== $id) {
                 continue;
             }
             if ($indexer->enabled()) {
@@ -112,8 +124,7 @@ class Indexer extends Command
 
         $names = [];
         foreach ($selectable as $indexer) {
-            $names[] = $indexer->getName()
-                . ' (source: ' . $indexer->getSource() . ')';
+            $names[] = $indexer->getName() . ' ' . $this->describe($indexer);
         }
         $this->io->newLine();
         $this->io->section('Several indexers are available.');
@@ -143,7 +154,7 @@ class Indexer extends Command
         $this->io->newLine();
         $this->io->section(
             'Index with Indexer "' . $indexer->getName() . '" '
-            . '(source: ' . $indexer->getSource() . ')',
+            . $this->describe($indexer),
         );
         $progressHandler = $indexer->getProgressHandler();
         $this->progressBar->init($progressHandler);
@@ -162,6 +173,14 @@ class Indexer extends Command
         $this->io->text($status->getStatusLine());
         $this->io->newLine();
         $this->errorReport();
+    }
+
+    private function describe(\Atoolo\Index\Indexer $indexer): string
+    {
+        return IndexerId::label(
+            IndexerId::of($indexer),
+            $indexer->getSource(),
+        );
     }
 
     protected function errorReport(): void

@@ -47,6 +47,8 @@ class DumpIndexDocumentTest extends TestCase
         );
 
         $dumper = $this->createStub(IndexDocumentDumper::class);
+        $dumper->method('getId')
+            ->willReturn('internal');
         $dumper->method('getSource')
             ->willReturn('internal');
         $document = $this->createStub(IndexDocument::class);
@@ -125,6 +127,24 @@ EOF,
         );
     }
 
+    public function testExecuteSelectsDumperById(): void
+    {
+        $tester = $this->createTester([
+            $this->createDumper('internal'),
+            $this->createDumper('internal', 'genai'),
+        ]);
+
+        $tester->execute(['paths' => ['test.php'], '--indexer' => 'genai']);
+        $tester->assertCommandIsSuccessful();
+
+        $this->assertStringContainsString(
+            '(id: genai, source: internal)',
+            $tester->getDisplay(),
+            'the --indexer option should pick the dumper among those '
+            . 'sharing a source',
+        );
+    }
+
     public function testExecuteAsksForSource(): void
     {
         $tester = $this->createTester([
@@ -172,11 +192,14 @@ EOF,
         return new CommandTester($application->find('index:dump-document'));
     }
 
-    private function createDumper(string $source): IndexDocumentDumper
-    {
+    private function createDumper(
+        string $source,
+        ?string $id = null,
+    ): IndexDocumentDumper {
         $document = $this->createStub(IndexDocument::class);
         $document->method('jsonSerialize')->willReturn(['id' => $source]);
         $dumper = $this->createStub(IndexDocumentDumper::class);
+        $dumper->method('getId')->willReturn($id ?? $source);
         $dumper->method('getSource')->willReturn($source);
         $dumper->method('dump')->willReturn([$document]);
         return $dumper;

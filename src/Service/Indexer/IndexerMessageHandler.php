@@ -24,8 +24,8 @@ class IndexerMessageHandler
             $indexer = $this->indexers->getIndexer($message->source);
         } catch (InvalidArgumentException $e) {
             $this->logger->error(
-                'No indexer found for scheduled source',
-                ['source' => $message->source, 'exception' => $e],
+                'No indexer found for scheduled id',
+                ['id' => $message->source, 'exception' => $e],
             );
             return;
         }
@@ -33,7 +33,7 @@ class IndexerMessageHandler
         $status = $indexer->index();
         $this->logger->info(
             'indexer finish: ' . $status->getStatusLine(),
-            ['source' => $message->source],
+            ['id' => $message->source],
         );
     }
 }

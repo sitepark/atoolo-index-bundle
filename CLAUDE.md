@@ -68,6 +68,21 @@ its own enricher iterator, its own progress state - and tags it
 `atoolo_index.indexer`. Enrichers are always target specific and therefore
 carry a tag of their own bundle.
 
+### Id and source
+
+An indexer has an **id** and a **source**. The source names where the
+content comes from and goes to the target with every document, delete and
+purge; indexers that read the same content into different targets share it -
+the solr and the GenAI indexer both have the source `internal`. The id names
+the indexer and is unique: it selects it on the console and in the schedule,
+names its configuration `configs/indexer/<id>.php` and keys its status,
+abortion and lock. `AbstractIndexer` and `IndexDocumentDumper` take it as an
+optional last argument that defaults to the source. The `Indexer` interface
+gains `getId()` only with 2.0; until then `IndexerId::of()` answers for any
+indexer, falling back to the source. `IndexerProgressState`,
+`IndexerConfiguration` and `IndexerMessage` keep their `$source` parameter
+until then, but it holds the id.
+
 ### Document dumper
 
 `IndexDocumentDumper` is generic as well, one instance per target, tagged
@@ -77,13 +92,13 @@ an index run writes.
 
 ### Console
 
-- `index:indexer [paths] [--source]` — run an indexer
-- `index:update <paths> [--source]` — update single paths of every
-  `UpdatableIndexer`
-- `index:dump-document <paths> [--source]` — dump a document
+- `index:indexer [paths] [--source] [--indexer]` — run an indexer
+- `index:update <paths> [--source] [--indexer]` — update single paths of
+  every `UpdatableIndexer`
+- `index:dump-document <paths> [--source] [--indexer]` — dump a document
 
-With exactly one candidate the source is used silently, with several the
-command asks.
+`--source` narrows the candidates to a source, `--indexer` to one id. With
+exactly one candidate it is used silently, with several the command asks.
 
 ### Scheduler
 
@@ -91,8 +106,8 @@ command asks.
 provider per indexer would need one `messenger:consume` worker per indexer.
 `IndexerScheduleProvider` therefore builds a **single** schedule named
 `atoolo_index` with one `RecurringMessage` per entry of the parameter
-`atoolo_index.indexer.schedules` (`{ <source>: '<cron>' }`), and
-`IndexerMessageHandler` resolves the indexer by the source of the message.
+`atoolo_index.indexer.schedules` (`{ <id>: '<cron>' }`), and
+`IndexerMessageHandler` resolves the indexer by the id of the message.
 
 ## Conventions
 

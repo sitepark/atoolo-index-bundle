@@ -50,6 +50,40 @@ class IndexDocumentDumperTest extends TestCase
         );
     }
 
+    public function testIdDefaultsToSource(): void
+    {
+        $dumper = new IndexDocumentDumper(
+            $this->createStub(ResourceLoader::class),
+            [],
+            $this->createFactory(),
+            'test-source',
+        );
+
+        $this->assertEquals(
+            'test-source',
+            $dumper->getId(),
+            'without an id of its own the dumper should be known by its '
+            . 'source',
+        );
+    }
+
+    public function testGetId(): void
+    {
+        $dumper = new IndexDocumentDumper(
+            $this->createStub(ResourceLoader::class),
+            [],
+            $this->createFactory(),
+            'internal',
+            'genai',
+        );
+
+        $this->assertEquals(
+            ['genai', 'internal'],
+            [$dumper->getId(), $dumper->getSource()],
+            'id and source should be kept apart',
+        );
+    }
+
     private function createFactory(): IndexDocumentFactory
     {
         $document = $this->createStub(IndexDocument::class);

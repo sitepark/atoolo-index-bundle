@@ -19,6 +19,10 @@ class IndexerProgressState implements IndexerProgressHandler
 
     private bool $isUpdate = false;
 
+    /**
+     * @param string $source the id of the indexer, which keys its status;
+     *    see {@see \Atoolo\Index\Service\AbstractIndexer}
+     */
     public function __construct(
         private readonly IndexName $index,
         private readonly IndexerStatusStore $statusStore,

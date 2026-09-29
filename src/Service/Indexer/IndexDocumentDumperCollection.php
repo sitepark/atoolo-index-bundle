@@ -15,15 +15,15 @@ class IndexDocumentDumperCollection
         private readonly iterable $dumpers,
     ) {}
 
-    public function getDumper(string $source): IndexDocumentDumper
+    public function getDumper(string $id): IndexDocumentDumper
     {
         foreach ($this->dumpers as $dumper) {
-            if ($dumper->getSource() === $source) {
+            if ($dumper->getId() === $id) {
                 return $dumper;
             }
         }
         throw new InvalidArgumentException(
-            'Index document dumper not found for source: ' . $source,
+            'Index document dumper not found for id: ' . $id,
         );
     }
 

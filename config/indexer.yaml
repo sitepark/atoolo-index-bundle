@@ -33,6 +33,7 @@ services:
     class: Atoolo\Index\Service\Indexer\SiteKit\NoNavigationFilter
     arguments:
       - '@atoolo_resource.resource_channel'
+      - '@atoolo_resource.navigation_hierarchy_loader'
 
   atoolo_index.indexer.resource_filter:
     class: Atoolo\Index\Service\Indexer\SiteKit\IndexerFilter

@@ -82,6 +82,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
         private readonly LockFactory $lockFactory = new LockFactory(
             new SemaphoreStore(),
         ),
+        ?string $id = null,
     ) {
         parent::__construct(
             $indexName,
@@ -89,6 +90,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
             $aborter,
             $configLoader,
             $source,
+            $id,
         );
     }
 
@@ -97,12 +99,33 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
      * configuration file passes `$enabledWithoutConfig`;
      * {@see IndexerConfigurationLoader::load()} falls back to defaults then.
      * Every other target is only offered once the CMS has a
-     * `configs/indexer/<source>.php`, so that the targets of a project can
+     * `configs/indexer/<id>.php`, so that the targets of a project can
      * be switched on separately.
      */
     public function enabled(): bool
     {
         return $this->enabledWithoutConfig || parent::enabled();
+    }
+
+    /**
+     * Whether a full run of this indexer is in progress, in this or any
+     * other process of the host.
+     *
+     * An update during a full run is lost: it writes its documents with a
+     * process id of its own, and the purge at the end of the full run
+     * removes every document without the process id of the run - also the
+     * updated ones whose path the run had already passed.
+     */
+    public function isIndexing(): bool
+    {
+        $lock = $this->lockFactory->createLock(
+            'indexer.' . $this->getKey(),
+        );
+        if (!$lock->acquire()) {
+            return true;
+        }
+        $lock->release();
+        return false;
     }
 
     /**
@@ -234,7 +257,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
 
     private function loadIndexerParameter(): IndexerParameter
     {
-        $config = $this->configLoader->load($this->source);
+        $config = $this->configLoader->load($this->id);
         /** @var string[] $excludes */
         $excludes = $config->data->getArray(
             'excludes',
@@ -383,6 +406,10 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
 
         $this->progressHandler->advance(count($resourceList));
         $result = $this->add($lang, $processId, $resourceList);
+
+        if ($result instanceof IndexUpdateResultWithUnchanged) {
+            $this->progressHandler->unchanged($result->getUnchanged());
+        }
 
         if (!$result->isSuccess()) {
             $this->handleError(

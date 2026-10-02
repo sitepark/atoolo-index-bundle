@@ -7,6 +7,7 @@ namespace Atoolo\Index\Test\Service\Indexer;
 use ArrayIterator;
 use Atoolo\Index\Indexer;
 use Atoolo\Index\Service\Indexer\IndexerCollection;
+use Atoolo\Index\Service\Indexer\InternalResourceIndexer;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
@@ -19,6 +20,24 @@ class IndexerCollectionTest extends TestCase
         $indexer->method('getSource')->willReturn('test');
         $indexers = new IndexerCollection([$indexer]);
         $this->assertNotNull($indexers->getIndexer('test'));
+    }
+
+    public function testGetIndexerById(): void
+    {
+        $solr = $this->createStub(InternalResourceIndexer::class);
+        $solr->method('getId')->willReturn('internal');
+        $solr->method('getSource')->willReturn('internal');
+        $genai = $this->createStub(InternalResourceIndexer::class);
+        $genai->method('getId')->willReturn('genai');
+        $genai->method('getSource')->willReturn('internal');
+
+        $indexers = new IndexerCollection([$solr, $genai]);
+
+        $this->assertSame(
+            $genai,
+            $indexers->getIndexer('genai'),
+            'indexers sharing a source should be told apart by their id',
+        );
     }
 
     public function testGetMissingIndexer(): void

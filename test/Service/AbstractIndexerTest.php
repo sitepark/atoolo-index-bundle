@@ -27,9 +27,11 @@ class AbstractIndexerTest extends TestCase
 
     private IndexerConfigurationLoader&MockObject $configLoader;
 
+    private IndexName $indexName;
+
     public function setUp(): void
     {
-        $indexName = $this->createMock(IndexName::class);
+        $this->indexName = $indexName = $this->createMock(IndexName::class);
         $indexName->method('name')
             ->willReturn('www');
         $this->progressHandler = $this->createMock(
@@ -71,6 +73,51 @@ class AbstractIndexerTest extends TestCase
             $this->indexer->getSource(),
             'The source of the indexer should be "test"',
         );
+    }
+
+    public function testIdDefaultsToSource(): void
+    {
+        $this->assertEquals(
+            'test',
+            $this->indexer->getId(),
+            'without an id of its own the indexer should be known by its '
+            . 'source',
+        );
+    }
+
+    public function testIdDiffersFromSource(): void
+    {
+        $indexer = $this->createIndexerWithId();
+
+        $this->assertEquals(
+            ['genai', 'internal'],
+            [$indexer->getId(), $indexer->getSource()],
+            'id and source should be kept apart',
+        );
+    }
+
+    public function testConfigIsLoadedById(): void
+    {
+        $this->configLoader->expects($this->once())
+            ->method('load')
+            ->with('genai');
+        $this->createIndexerWithId()->getName();
+    }
+
+    public function testEnabledById(): void
+    {
+        $this->configLoader->expects($this->once())
+            ->method('exists')
+            ->with('genai');
+        $this->createIndexerWithId()->enabled();
+    }
+
+    public function testAbortById(): void
+    {
+        $this->aborter->expects($this->once())
+            ->method('requestAbortion')
+            ->with('www-genai');
+        $this->createIndexerWithId()->abort();
     }
 
     public function testGetProgressHandler(): void
@@ -121,5 +168,17 @@ class AbstractIndexerTest extends TestCase
             ->method('isAbortionRequested')
             ->with('www-test');
         $this->indexer->isAbortionRequested();
+    }
+
+    private function createIndexerWithId(): TextIndexer
+    {
+        return new TextIndexer(
+            $this->indexName,
+            $this->progressHandler,
+            $this->aborter,
+            $this->configLoader,
+            'internal',
+            'genai',
+        );
     }
 }

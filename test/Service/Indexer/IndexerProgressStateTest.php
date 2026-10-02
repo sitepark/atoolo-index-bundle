@@ -161,6 +161,38 @@ class IndexerProgressStateTest extends TestCase
         $this->state->skip(1);
     }
 
+    public function testUnchanged(): void
+    {
+        $this->state->start(10);
+
+        $this->state->unchanged(3);
+
+        $this->assertMatchesRegularExpression(
+            '/\[RUNNING].*unchanged: 3,/',
+            $this->state->getStatus()->getStatusLine(),
+            "unexpected status line",
+        );
+    }
+
+    public function testUnchangedWithoutStart(): void
+    {
+        $this->expectException(LogicException::class);
+        $this->state->unchanged(1);
+    }
+
+    public function testUpdateKeepsTheUnchangedOfTheLastRun(): void
+    {
+        $this->status->unchanged = 7;
+
+        $this->state->startUpdate(10);
+
+        $this->assertMatchesRegularExpression(
+            '/\[RUNNING].*unchanged: 7,/',
+            $this->state->getStatus()->getStatusLine(),
+            "unexpected status line",
+        );
+    }
+
     public function testError(): void
     {
         $this->state->start(10);

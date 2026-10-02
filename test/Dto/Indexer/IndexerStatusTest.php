@@ -39,6 +39,7 @@ class IndexerStatusTest extends TestCase
             $lastUpdate,
             6,
             2,
+            unchanged: 3,
         );
     }
 
@@ -52,6 +53,7 @@ class IndexerStatusTest extends TestCase
                 . 'skipped: 4, '
                 . 'lastUpdate: 31.01.2024 13:17, '
                 . 'updated: 6, '
+                . 'unchanged: 3, '
                 . 'errors: 2',
             $this->status->getStatusLine(),
             "unexpected status line",
@@ -104,6 +106,7 @@ class IndexerStatusTest extends TestCase
             . 'skipped: 0, '
             . 'lastUpdate: ' . $dateTimePattern . ', '
             . 'updated: 0, '
+            . 'unchanged: 0, '
             . 'errors: 0'
             . '/';
 

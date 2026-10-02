@@ -52,7 +52,8 @@ class IndexerStatusStoreTest extends TestCase
             . '"lastUpdate":"2024-01-31T13:17:12+00:00",'
             . '"updated":6,'
             . '"errors":2,'
-            . '"prepareMessage":""'
+            . '"prepareMessage":"",'
+            . '"unchanged":0'
             . '}';
 
         $this->assertEquals($expected, $json, 'unexpected json string');

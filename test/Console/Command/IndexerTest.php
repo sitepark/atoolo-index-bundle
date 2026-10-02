@@ -54,6 +54,8 @@ class IndexerTest extends TestCase
         );
         $indexerA->method('enabled')
             ->willReturn(true);
+        $indexerA->method('getId')
+            ->willReturn('indexer_a');
         $indexerA->method('getSource')
             ->willReturn('indexer_a');
         $indexerA->method('getName')

@@ -14,6 +14,12 @@ interface IndexerProgressHandler
     public function startUpdate(int $total): void;
     public function advance(int $step): void;
     public function skip(int $step): void;
+    /**
+     * Documents the target received but left as they were, see
+     * {@see IndexUpdateResultWithUnchanged}. They are counted by
+     * {@see advance()} already.
+     */
+    public function unchanged(int $step): void;
     public function error(Throwable $throwable): void;
     public function finish(): void;
     public function abort(): void;

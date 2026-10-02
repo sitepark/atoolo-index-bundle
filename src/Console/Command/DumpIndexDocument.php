@@ -7,6 +7,7 @@ namespace Atoolo\Index\Console\Command;
 use Atoolo\Index\Console\Command\Io\TypifiedInput;
 use Atoolo\Index\Service\Indexer\IndexDocumentDumper;
 use Atoolo\Index\Service\Indexer\IndexDocumentDumperCollection;
+use Atoolo\Index\Service\Indexer\IndexerId;
 use Atoolo\Resource\ResourceChannel;
 use JsonException;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -44,19 +45,35 @@ class DumpIndexDocument extends Command
                 'source',
                 null,
                 InputArgument::OPTIONAL,
-                'Uses only the document dumper of a specific source',
+                'Uses only the document dumpers of a specific source',
+                '',
+            )
+            ->addOption(
+                'indexer',
+                null,
+                InputArgument::OPTIONAL,
+                'Uses only the document dumper of the indexer with this id',
                 '',
             )
         ;
     }
 
     /**
-     * The source whose document is to be dumped. Subclasses can pin the
-     * source, so that their output never changes.
+     * The source whose document is to be dumped. Several indexers may share
+     * a source, so pinning it does not single one out; pin the id instead.
      */
     protected function getRequestedSource(TypifiedInput $input): string
     {
         return $input->getStringOption('source');
+    }
+
+    /**
+     * The id of the indexer whose document is to be dumped. Subclasses can
+     * pin the id, so that their output never changes.
+     */
+    protected function getRequestedId(TypifiedInput $input): string
+    {
+        return $input->getStringOption('indexer');
     }
 
     /**
@@ -71,10 +88,11 @@ class DumpIndexDocument extends Command
 
         $paths = $typedInput->getArrayArgument('paths');
         $source = $this->getRequestedSource($typedInput);
+        $id = $this->getRequestedId($typedInput);
 
         $io = new SymfonyStyle($input, $output);
 
-        $selectable = $this->getSelectableDumper($source);
+        $selectable = $this->getSelectableDumper($source, $id);
         if (empty($selectable)) {
             $io->title('Channel: ' . $this->channel->name);
             $io->error('No index document dumper available');
@@ -85,7 +103,7 @@ class DumpIndexDocument extends Command
 
         $io->title(
             'Channel: ' . $this->channel->name
-            . ' (source: ' . $dumper->getSource() . ')',
+            . ' ' . IndexerId::label($dumper->getId(), $dumper->getSource()),
         );
 
         $dump = $dumper->dump($paths);
@@ -103,11 +121,14 @@ class DumpIndexDocument extends Command
     /**
      * @return IndexDocumentDumper[]
      */
-    private function getSelectableDumper(string $source): array
+    private function getSelectableDumper(string $source, string $id): array
     {
         $selectable = [];
         foreach ($this->dumpers->getDumpers() as $dumper) {
             if (!empty($source) && $dumper->getSource() !== $source) {
+                continue;
+            }
+            if (!empty($id) && $dumper->getId() !== $id) {
                 continue;
             }
             $selectable[] = $dumper;
@@ -128,9 +149,9 @@ class DumpIndexDocument extends Command
             return $selectable[0];
         }
 
-        $sources = [];
+        $ids = [];
         foreach ($selectable as $dumper) {
-            $sources[] = $dumper->getSource();
+            $ids[] = $dumper->getId();
         }
         $io->newLine();
         $io->section('Several index document dumpers are available.');
@@ -139,16 +160,16 @@ class DumpIndexDocument extends Command
         $helper = $this->getHelper('question');
 
         $question = new ChoiceQuestion(
-            'Please select the source you want to use [0]',
-            $sources,
+            'Please select the indexer you want to use [0]',
+            $ids,
         );
-        $question->setErrorMessage('Source %s is invalid.');
+        $question->setErrorMessage('Indexer %s is invalid.');
 
-        /** @var string $selectedSource */
-        $selectedSource = $helper->ask($input, $output, $question);
-        $io->text('You have just selected: ' . $selectedSource);
+        /** @var string $selectedId */
+        $selectedId = $helper->ask($input, $output, $question);
+        $io->text('You have just selected: ' . $selectedId);
 
-        $pos = array_search($selectedSource, $sources, true);
+        $pos = array_search($selectedId, $ids, true);
         return $selectable[$pos];
     }
 }

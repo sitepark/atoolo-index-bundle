@@ -100,6 +100,7 @@ class InternalResourceIndexerTest extends TestCase
                     '',
                     '',
                     '',
+                    '',
                     $resourceLang,
                     new DataBag([]),
                 );

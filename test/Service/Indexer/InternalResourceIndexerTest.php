@@ -396,6 +396,47 @@ class InternalResourceIndexerTest extends TestCase
         ]);
     }
 
+    public function testUpdateDoesNotPurge(): void
+    {
+        $paths = $this->tenPaths();
+        $this->finder->method('findPaths')->willReturn($paths);
+        $this->updateResult->method('isSuccess')->willReturn(true);
+        $this->indexerFilter->method('accept')->willReturn(true);
+
+        $this->indexService->expects($this->never())
+            ->method('deleteExcludingProcessId');
+
+        $this->indexer->update($paths);
+    }
+
+    public function testFullRunAfterAnUpdatePurges(): void
+    {
+        $paths = $this->tenPaths();
+        $this->finder->method('findPaths')->willReturn($paths);
+        $this->finder->method('findAll')->willReturn($paths);
+        $this->updateResult->method('isSuccess')->willReturn(true);
+        $this->indexerFilter->method('accept')->willReturn(true);
+
+        $this->indexService->expects($this->once())
+            ->method('deleteExcludingProcessId');
+
+        $this->indexer->update($paths);
+        $this->indexer->index();
+    }
+
+    /**
+     * As many paths as the cleanup threshold of the configuration.
+     *
+     * @return array<string>
+     */
+    private function tenPaths(): array
+    {
+        return array_map(
+            static fn(string $name) => '/a/' . $name . '.php',
+            range('a', 'j'),
+        );
+    }
+
     public function testUnchangedDocumentsAreReported(): void
     {
         $this->finder->method('findPaths')

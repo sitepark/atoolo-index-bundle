@@ -18,6 +18,7 @@ class NoIndexFilterTest extends TestCase
     {
         $resource = new Resource(
             'test',
+            '',
             'test',
             'test',
             'test',
@@ -35,6 +36,7 @@ class NoIndexFilterTest extends TestCase
     {
         $resource = new Resource(
             'test',
+            '',
             'test',
             'test',
             'test',

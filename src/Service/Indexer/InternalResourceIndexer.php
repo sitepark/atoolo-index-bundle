@@ -50,8 +50,6 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
 {
     private IndexerParameter $parameter;
 
-    private bool $skipCleanup = false;
-
     /**
      * @var array<string>|null
      */
@@ -192,7 +190,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
             $total = count($paths);
             $this->progressHandler->start($total);
 
-            $this->indexResources($param, $paths);
+            $this->indexResources($param, $paths, true);
         } finally {
             // should already be cleaned up by the gc
             unset($paths);
@@ -211,8 +209,6 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
     public function update(array $paths): IndexerStatus
     {
 
-        $this->skipCleanup = true;
-
         $paths = array_map(function ($p) {
             return $this->normalizePath($p);
         }, $paths);
@@ -229,7 +225,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
             $total = count($collectedPaths);
             $this->progressHandler->startUpdate($total);
 
-            $this->indexResources($param, $collectedPaths);
+            $this->indexResources($param, $collectedPaths, false);
         } finally {
             // should already be cleaned up by the gc
             unset($collectedPaths);
@@ -280,10 +276,13 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
      * Indexes the resources of all passed paths.
      *
      * @param array<string> $pathList
+     * @param bool $cleanup whether the documents of other runs are removed
+     *     afterwards - only a full run may do so, not an update
      */
     private function indexResources(
         IndexerParameter $parameter,
         array $pathList,
+        bool $cleanup,
     ): void {
         if (count($pathList) === 0) {
             return;
@@ -326,7 +325,9 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
         $this->commitLocaleIndices(
             $updatedIndexLocales,
             $processId,
-            $parameter->cleanupThreshold > 0 && $successCount >= $parameter->cleanupThreshold,
+            $cleanup
+                && $parameter->cleanupThreshold > 0
+                && $successCount >= $parameter->cleanupThreshold,
         );
     }
 
@@ -364,11 +365,11 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
     private function commitLocaleIndices(
         array $indexLocales,
         string $processId,
-        bool $thresholdReached,
+        bool $cleanup,
     ): void {
 
         foreach ($indexLocales as $indexLocale) {
-            if ($thresholdReached && !$this->skipCleanup) {
+            if ($cleanup) {
                 $this->indexService->deleteExcludingProcessId(
                     $indexLocale,
                     $this->source,
@@ -476,11 +477,11 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
         $updater = $this->indexService->updater($lang);
 
         foreach ($resources as $resource) {
-            if ($this->resourceFilter->accept($resource) === false) {
-                $this->progressHandler->skip(1);
-                continue;
-            }
             try {
+                if ($this->resourceFilter->accept($resource) === false) {
+                    $this->progressHandler->skip(1);
+                    continue;
+                }
                 $doc = $updater->createDocument();
                 foreach ($this->documentEnricherList as $enricher) {
                     $doc = $enricher->enrichDocument(

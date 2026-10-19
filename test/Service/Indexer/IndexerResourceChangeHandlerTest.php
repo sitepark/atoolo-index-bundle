@@ -74,6 +74,33 @@ class IndexerResourceChangeHandlerTest extends TestCase
         $this->handler([$indexer])->handle(new ResourceChanges());
     }
 
+    public function testLeavesOutChangedConfigurations(): void
+    {
+        $indexer = $this->createMock(UpdatableIndexer::class);
+        $indexer->method('enabled')->willReturn(true);
+        $indexer->expects($this->once())
+            ->method('update')
+            ->with(['/a.php'])
+            ->willReturn(IndexerStatus::empty());
+
+        $this->handler([$indexer])->handle(new ResourceChanges([
+            new ResourceChange('1', '/a.php', 'OBJECT'),
+            new ResourceChange('2', '/genai/glossary/b.php', 'CONFIG'),
+        ]));
+    }
+
+    public function testChangedConfigurationAloneIsNotDeferred(): void
+    {
+        $running = $this->createMock(InternalResourceIndexer::class);
+        $running->method('enabled')->willReturn(true);
+        $running->method('isIndexing')->willReturn(true);
+        $running->expects($this->never())->method('update');
+
+        $this->handler([$running])->handle(new ResourceChanges([
+            new ResourceChange('1', '/genai/glossary/b.php', 'CONFIG'),
+        ]));
+    }
+
     public function testDefersWhileAnIndexerIsRunning(): void
     {
         $idle = $this->createMock(UpdatableIndexer::class);

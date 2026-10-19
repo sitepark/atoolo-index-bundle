@@ -19,6 +19,10 @@ use Psr\Log\NullLogger;
  * for all indexers, see {@see InternalResourceIndexer::isIndexing()}. The
  * indexers already served then see the changes once more, which is
  * harmless, since indexing is idempotent.
+ *
+ * Only the files of the resource directory are indexed: a changed file of
+ * another publication type, such as a configuration, is left to the handlers
+ * that know it, see {@see ResourceChanges::changedResourcePaths()}.
  */
 class IndexerResourceChangeHandler implements ResourceChangeHandler
 {
@@ -29,6 +33,11 @@ class IndexerResourceChangeHandler implements ResourceChangeHandler
 
     public function handle(ResourceChanges $changes): void
     {
+        $paths = $changes->changedResourcePaths();
+        if (empty($paths) && empty($changes->removedIds)) {
+            return;
+        }
+
         $indexers = array_values(array_filter(
             $this->indexers->getIndexers(),
             static fn($indexer) => $indexer->enabled(),
@@ -45,7 +54,6 @@ class IndexerResourceChangeHandler implements ResourceChangeHandler
             }
         }
 
-        $paths = $changes->changedPaths();
         foreach ($indexers as $indexer) {
             if (!empty($paths) && $indexer instanceof UpdatableIndexer) {
                 $status = $indexer->update($paths);

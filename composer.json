@@ -11,7 +11,7 @@
     ],
     "require": {
         "php": ">=8.1 <8.6.0",
-        "atoolo/resource-bundle": "dev-main",
+        "atoolo/resource-bundle": "^1.10.0",
         "dragonmantank/cron-expression": "^3.6",
         "psr/log": "^3.0.2",
         "soundasleep/html2text": "^2.1",

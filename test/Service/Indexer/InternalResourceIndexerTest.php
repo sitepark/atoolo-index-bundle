@@ -98,7 +98,7 @@ class InternalResourceIndexerTest extends TestCase
                 return new Resource(
                     $location->location,
                     '',
-                    '',
+                    basename($location->location, '.php'),
                     '',
                     '',
                     $resourceLang,
@@ -152,10 +152,15 @@ class InternalResourceIndexerTest extends TestCase
         $this->lockFactory = new LockFactory(new SemaphoreStore());
         $this->logger = $this->createMock(LoggerInterface::class);
 
+        $this->indexer = $this->createIndexer();
+    }
+
+    private function createIndexer(): InternalResourceIndexer
+    {
         $indexName = $this->createStub(IndexName::class);
         $indexName->method('name')->willReturn('test');
 
-        $this->indexer = new InternalResourceIndexer(
+        return new InternalResourceIndexer(
             [ $this->documentEnricher ],
             $this->indexerFilter,
             $this->indexerProgressHandler,
@@ -421,6 +426,121 @@ class InternalResourceIndexerTest extends TestCase
             ->method('deleteExcludingProcessId');
 
         $this->indexer->update($paths);
+        $this->indexer->index();
+    }
+
+    public function testUpdateDeletesStaleDocumentsOfIndexedResources(): void
+    {
+        $this->finder->method('findPaths')
+            ->willReturn(['/a/b.php', '/a/c.php', '/a/d.php']);
+        $this->updateResult->method('isSuccess')->willReturn(true);
+        $this->indexerFilter->method('accept')
+            ->willReturnCallback(
+                fn(Resource $resource) => $resource->location !== '/a/d.php',
+            );
+
+        $this->indexService->expects($this->once())
+            ->method('deleteByIdListExcludingProcessId')
+            ->with(
+                ResourceLanguage::default(),
+                'test-source',
+                ['b', 'c'],
+                $this->isType('string'),
+            );
+
+        $this->indexer->update(['/a/b.php', '/a/c.php', '/a/d.php']);
+    }
+
+    public function testUpdateDeletesStaleDocumentsWithProcessIdOfTheRun(): void
+    {
+        $this->finder->method('findPaths')->willReturn(['/a/b.php']);
+        $this->updateResult->method('isSuccess')->willReturn(true);
+        $this->indexerFilter->method('accept')->willReturn(true);
+
+        $writtenProcessId = null;
+        $this->documentEnricher = $this->createMock(DocumentEnricher::class);
+        $this->documentEnricher->method('enrichDocument')
+            ->willReturnCallback(
+                function ($resource, $doc, $processId) use (&$writtenProcessId) {
+                    $writtenProcessId = $processId;
+                    return $doc;
+                },
+            );
+        $indexer = $this->createIndexer();
+
+        $deletedProcessId = null;
+        $this->indexService->expects($this->once())
+            ->method('deleteByIdListExcludingProcessId')
+            ->with(
+                $this->anything(),
+                $this->anything(),
+                $this->anything(),
+                $this->callback(
+                    function (string $processId) use (&$deletedProcessId) {
+                        $deletedProcessId = $processId;
+                        return true;
+                    },
+                ),
+            );
+
+        $indexer->update(['/a/b.php']);
+
+        $this->assertNotNull($writtenProcessId);
+        $this->assertSame($writtenProcessId, $deletedProcessId);
+    }
+
+    public function testUpdateDeletesStaleDocumentsInChunks(): void
+    {
+        $paths = array_map(
+            static fn(int $i) => '/a/r' . $i . '.php',
+            range(1, 501),
+        );
+        $this->finder->method('findPaths')->willReturn($paths);
+        $this->updateResult->method('isSuccess')->willReturn(true);
+        $this->indexerFilter->method('accept')->willReturn(true);
+
+        $chunkSizes = [];
+        $this->indexService->expects($this->exactly(2))
+            ->method('deleteByIdListExcludingProcessId')
+            ->with(
+                $this->anything(),
+                $this->anything(),
+                $this->callback(
+                    function (array $idList) use (&$chunkSizes) {
+                        $chunkSizes[] = count($idList);
+                        return true;
+                    },
+                ),
+                $this->anything(),
+            );
+
+        $this->indexer->update($paths);
+
+        $this->assertSame([500, 1], $chunkSizes);
+    }
+
+    public function testUpdateKeepsDocumentsOfAFailedUpdate(): void
+    {
+        $this->finder->method('findPaths')->willReturn(['/a/b.php']);
+        $this->updateResult->method('isSuccess')->willReturn(false);
+        $this->indexerFilter->method('accept')->willReturn(true);
+
+        $this->indexService->expects($this->never())
+            ->method('deleteByIdListExcludingProcessId');
+
+        $this->indexer->update(['/a/b.php']);
+    }
+
+    public function testFullRunDoesNotDeleteByIdList(): void
+    {
+        $paths = $this->tenPaths();
+        $this->finder->method('findAll')->willReturn($paths);
+        $this->updateResult->method('isSuccess')->willReturn(true);
+        $this->indexerFilter->method('accept')->willReturn(true);
+
+        $this->indexService->expects($this->never())
+            ->method('deleteByIdListExcludingProcessId');
+
         $this->indexer->index();
     }
 

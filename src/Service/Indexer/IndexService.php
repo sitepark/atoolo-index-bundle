@@ -56,6 +56,24 @@ interface IndexService
     ): void;
 
     /**
+     * Removes what an update of the given resources did not write again:
+     * every document of the given source belonging to one of the resource
+     * ids that does not carry the given process id.
+     *
+     * A resource may be indexed as several documents (e.g. one per
+     * alternative title). If it yields fewer documents than before, the
+     * surplus ones would otherwise remain until the next full run.
+     *
+     * @param string[] $idList ids of the resources, not of the documents
+     */
+    public function deleteByIdListExcludingProcessId(
+        ResourceLanguage $lang,
+        string $source,
+        array $idList,
+        string $processId,
+    ): void;
+
+    /**
      * @param string[] $idList
      */
     public function deleteByIdListForAllLanguages(

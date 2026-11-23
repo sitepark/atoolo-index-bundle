@@ -48,6 +48,12 @@ use Throwable;
  */
 class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexer
 {
+    /**
+     * Number of resource ids per delete request, so that the query does not
+     * grow beyond what the target accepts.
+     */
+    private const DELETE_ID_CHUNK_SIZE = 500;
+
     private IndexerParameter $parameter;
 
     /**
@@ -59,6 +65,14 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
      * @var array<string, string|false>
      */
     private array $validIndexnameByLanguage = [];
+
+    /**
+     * Ids of the resources the current run has written successfully,
+     * grouped by language code.
+     *
+     * @var array<string, array<string>>
+     */
+    private array $indexedResourceIds = [];
 
     /**
      * @param iterable<DocumentEnricher<IndexDocument>> $documentEnricherList
@@ -291,6 +305,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
         $successCount = 0;
         $updatedIndexLocales = [];
         $processId = uniqid('', true);
+        $this->indexedResourceIds = [];
         $sortedPathlist = $this->sortPathlistByLocale($pathList);
 
         while (true) {
@@ -375,8 +390,40 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
                     $this->source,
                     $processId,
                 );
+            } else {
+                $this->deleteStaleDocumentsOfIndexedResources(
+                    $indexLocale,
+                    $processId,
+                );
             }
             $this->indexService->commit($indexLocale);
+        }
+        $this->indexedResourceIds = [];
+    }
+
+    /**
+     * An update only overwrites documents with the same id. A resource that
+     * now yields fewer documents than before (e.g. one alternative title
+     * less) would leave the surplus documents in the index until the next
+     * full run. They still carry the process id of an earlier run and are
+     * removed here - limited to the resources of this run.
+     */
+    private function deleteStaleDocumentsOfIndexedResources(
+        ResourceLanguage $lang,
+        string $processId,
+    ): void {
+        $idList = array_values(array_unique(
+            $this->indexedResourceIds[$lang->code] ?? [],
+        ));
+        foreach (
+            array_chunk($idList, self::DELETE_ID_CHUNK_SIZE) as $idChunk
+        ) {
+            $this->indexService->deleteByIdListExcludingProcessId(
+                $lang,
+                $this->source,
+                $idChunk,
+                $processId,
+            );
         }
     }
 
@@ -475,6 +522,7 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
     ): IndexUpdateResult {
 
         $updater = $this->indexService->updater($lang);
+        $resourceIds = [];
 
         foreach ($resources as $resource) {
             try {
@@ -494,13 +542,21 @@ class InternalResourceIndexer extends AbstractIndexer implements UpdatableIndexe
                     $enricher->cleanup();
                 }
                 $updater->addDocument($doc);
+                $resourceIds[] = $resource->id;
             } catch (Throwable $e) {
                 $this->handleError($e);
             }
         }
 
         // this executes the query and returns the result
-        return $updater->update();
+        $result = $updater->update();
+        if ($result->isSuccess() && $resourceIds !== []) {
+            $this->indexedResourceIds[$lang->code] = array_merge(
+                $this->indexedResourceIds[$lang->code] ?? [],
+                $resourceIds,
+            );
+        }
+        return $result;
     }
 
     private function handleError(Throwable|string $error): void

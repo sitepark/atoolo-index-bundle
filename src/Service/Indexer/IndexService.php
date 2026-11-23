@@ -64,7 +64,11 @@ interface IndexService
      * alternative title). If it yields fewer documents than before, the
      * surplus ones would otherwise remain until the next full run.
      *
-     * @param string[] $idList ids of the resources, not of the documents
+     * The ids are those of the resources, not of the documents. Which of its
+     * documents belong to a resource is up to the target - the Solr target
+     * maps the resource id to a schema field, for example.
+     *
+     * @param string[] $idList ids of the resources
      */
     public function deleteByIdListExcludingProcessId(
         ResourceLanguage $lang,
@@ -74,7 +78,13 @@ interface IndexService
     ): void;
 
     /**
-     * @param string[] $idList
+     * Removes all documents of the given resources from the indices of all
+     * languages, as the CMS removes a resource as a whole.
+     *
+     * The ids are those of the resources, not of the documents; which of its
+     * documents belong to a resource is up to the target.
+     *
+     * @param string[] $idList ids of the resources
      */
     public function deleteByIdListForAllLanguages(
         string $source,
